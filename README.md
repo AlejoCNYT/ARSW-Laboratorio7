@@ -12,9 +12,11 @@
 
 3. Agregue lo que haga falta en sus módulos para que cuando se capturen nuevos puntos en el canvas abierto (si no se ha seleccionado un canvas NO se debe hacer nada):
 	1. Se agregue el punto al final de la secuencia de puntos del canvas actual (sólo en la memoria de la aplicación, AÚN NO EN EL API!).
+    
     		![imagen](https://github.com/user-attachments/assets/c2dea246-110d-4626-ba72-2ebd2d6e8917)
 
-	2. Se repinte el dibujo.
+	3. Se repinte el dibujo.
+    
     		![imagen](https://github.com/user-attachments/assets/4b76a234-babc-47aa-8f40-e6bb63e2a92f)
 
 4. Agregue el botón Save/Update. Respetando la arquitectura de módulos actual del cliente, haga que al oprimirse el botón:
