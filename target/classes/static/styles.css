@@ -1,0 +1,20 @@
+.container {
+    display: flex;
+    align-items: center;
+    justify-content: start; /* Alinea a la izquierda */
+    gap: 10px;
+}
+
+.open-btn {
+    display: inline-block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    width: auto !important;
+    height: auto !important;
+}
+
+#blueprintCanvas {
+    display: block;
+    background-color: white;
+    border: 2px solid black;
+}
