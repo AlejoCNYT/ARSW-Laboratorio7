@@ -44,16 +44,20 @@
 	```
 	* Como en este caso se tienen tres operaciones basadas en _callbacks_, y que las mismas requieren realizarse en un orden específico, tenga en cuenta cómo usar las promesas de JavaScript [mediante alguno de los ejemplos disponibles](http://codepen.io/hcadavid/pen/jrwdgK).
 
-5. Agregue el botón 'Create new blueprint', de manera que cuando se oprima: 
+4. Agregue el botón 'Create new blueprint', de manera que cuando se oprima: 
 	* Se borre el canvas actual.
 	* Se solicite el nombre del nuevo 'blueprint' (usted decide la manera de hacerlo).
-	
+
+![imagen](https://github.com/user-attachments/assets/f8f87e2e-9b67-4bf8-a194-663b451bd3ea)
+
+ ![imagen](https://github.com/user-attachments/assets/988b2cdd-e1d1-472a-ad17-c0870ce2054f)
+
 	Esta opción debe cambiar la manera como funciona la opción 'save/update', pues en este caso, al oprimirse la primera vez debe (igualmente, usando promesas):
 
 	1. Hacer POST al recurso /blueprints, para crear el nuevo plano.
 	2. Hacer GET a este mismo recurso, para actualizar el listado de planos y el puntaje del usuario.
 
-6. Agregue el botón 'DELETE', de manera que (también con promesas):
+5. Agregue el botón 'DELETE', de manera que (también con promesas):
 	* Borre el canvas.
 	* Haga DELETE del recurso correspondiente.
 	* Haga GET de los planos ahora disponibles.
