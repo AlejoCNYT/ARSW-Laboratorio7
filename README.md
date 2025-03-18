@@ -59,6 +59,10 @@
 
 5. Agregue el botón 'DELETE', de manera que (también con promesas):
 	* Borre el canvas.
+
+	![imagen](https://github.com/user-attachments/assets/2d0dd96a-78c5-4984-9ff0-371147138a84)
+
+
 	* Haga DELETE del recurso correspondiente.
 	* Haga GET de los planos ahora disponibles.
 
