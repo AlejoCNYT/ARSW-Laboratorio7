@@ -20,4 +20,5 @@ public interface BlueprintsPersistence
     Blueprint getBlueprint(String author, String name) throws BlueprintNotFoundException;
     Set<Blueprint> getBlueprintsByAuthor(String author);
     Set<Blueprint> getAllBlueprints();
-}
+
+    void deleteBlueprint(String author, String bpname) throws BlueprintNotFoundException;}

@@ -1,14 +1,94 @@
 import { initCanvasHandlers } from "./canvasHandler.js";
 
 var App = (function () {
-    let api = apimock; // Usamos el mock API
+    let api = apimock;
     let currentAuthor = "";
+    let currentBlueprintName = null;
+    let blueprintActual = null;
+
+    function saveOrUpdateBlueprint() {
+        if (!blueprintActual || !currentAuthor) {
+            alert("No hay un plano seleccionado para actualizar.");
+            return;
+        }
+
+        console.log("⏳ Guardando Blueprint...", blueprintActual);
+
+        fetch(`/blueprints/${encodeURIComponent(currentAuthor)}/${encodeURIComponent(blueprintActual.name)}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                name: blueprintActual.name,
+                points: blueprintActual.points
+            })
+        })
+            .then(response => {
+                if (!response.ok) {
+                    return response.text().then(text => { throw new Error(text); });
+                }
+                alert("✔️ Plano actualizado con éxito.");
+                updateBlueprintsList(currentAuthor);
+                fetchAllBlueprints();
+            })
+            .catch(error => console.error("❌ Error al actualizar:", error));
+    }
+
+    function fetchAllBlueprints() {
+        $.get("/blueprints")
+            .done(function (blueprints) {
+                $("#allBlueprintsTable tbody").empty();
+                blueprints.forEach(bp => {
+                    $("#allBlueprintsTable tbody").append(
+                        `<tr>
+                        <td>${bp.author}</td>
+                        <td>${bp.name}</td>
+                        <td>${bp.points.length}</td>
+                    </tr>`
+                    );
+                });
+            })
+            .fail(error => console.error("❌ Error obteniendo planos:", error));
+    }
+
+    function deleteBlueprint() {
+        if (!currentBlueprintName || !currentAuthor) {
+            alert("No hay un plano seleccionado para eliminar.");
+            return;
+        }
+
+        const confirmed = confirm(`¿Estás seguro de eliminar el plano: ${currentBlueprintName}?`);
+        if (!confirmed) return;
+
+        fetch(`/blueprints/${encodeURIComponent(currentAuthor)}/${encodeURIComponent(currentBlueprintName)}`, {
+            method: "DELETE",
+        })
+            .then(response => {
+                if (!response.ok) throw new Error("Error al eliminar el plano.");
+                alert("✔️ Plano eliminado correctamente.");
+
+                let canvas = document.getElementById("blueprintCanvas");
+                let ctx = canvas.getContext("2d");
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                currentBlueprintName = null;
+                blueprintActual = null;
+                $("#authorName").text("None");
+                updateBlueprintsList(currentAuthor);
+                fetchAllBlueprints();
+            })
+            .catch(error => console.error("❌ Error al eliminar:", error));
+    }
 
     function setAuthor(author) {
         currentAuthor = author;
     }
 
     function updateBlueprintsList(author) {
+        if (!author) {
+            console.error("⚠️ No se ha definido un autor.");
+            return;
+        }
+
         api.getBlueprintsByAuthor(author, function (blueprints) {
             let transformedData = blueprints.map(bp => ({
                 name: bp.name,
@@ -17,74 +97,82 @@ var App = (function () {
 
             let totalPoints = transformedData.reduce((sum, bp) => sum + bp.points, 0);
 
-            $("#blueprintsTable tbody").empty(); // Limpiar la tabla
+            $("#blueprintsTable tbody").empty();
             transformedData.forEach(bp => {
                 $("#blueprintsTable tbody").append(
                     `<tr>
                         <td>${bp.name}</td>
                         <td>${bp.points}</td>
                         <td>
-                            <button class="btn btn-info draw-btn" data-name="${bp.name}">Draw</button>
+                            <button class="btn btn-info draw-btn" data-name="${bp.name}">Dibujar</button>
                         </td>
                     </tr>`
                 );
             });
 
-            $("#totalUserPoints").text(`Total user points: ${totalPoints}`);
+            $("#totalUserPoints").text(`Puntos totales: ${totalPoints}`);
 
-            // Asociar evento click a los botones "Draw"
             $(".draw-btn").click(function () {
                 let blueprintName = $(this).data("name");
-                drawBlueprint(author, blueprintName);
+                currentBlueprintName = blueprintName;
+                api.getBlueprintsByNameAndAuthor(author, blueprintName, drawBlueprint);
             });
         });
     }
 
-    function drawBlueprint(author, blueprintName) {
-        api.getBlueprintsByNameAndAuthor(author, blueprintName, function (blueprint) {
-            let canvas = document.getElementById("blueprintCanvas");
-            let ctx = canvas.getContext("2d");
+    function drawBlueprint(blueprint) {
+        let canvas = document.getElementById("blueprintCanvas");
+        let ctx = canvas.getContext("2d");
 
-            ctx.clearRect(0, 0, canvas.width, canvas.height); // Limpiar el canvas
-            ctx.beginPath();
-            if (blueprint.points.length > 0) {
-                ctx.moveTo(blueprint.points[0].x, blueprint.points[0].y);
-                for (let i = 1; i < blueprint.points.length; i++) {
-                    ctx.lineTo(blueprint.points[i].x, blueprint.points[i].y);
-                }
-                ctx.stroke();
-            }
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.beginPath();
 
-            // Actualizar el título del plano seleccionado
-            if ($("#selectedBlueprint").length === 0) {
-                $("#blueprintCanvas").after(`<h3 id="selectedBlueprint">Drawing: ${blueprintName}</h3>`);
-            } else {
-                $("#selectedBlueprint").text(`Drawing: ${blueprintName}`);
+        if (blueprint.points.length > 0) {
+            ctx.moveTo(blueprint.points[0].x, blueprint.points[0].y);
+            for (let i = 1; i < blueprint.points.length; i++) {
+                ctx.lineTo(blueprint.points[i].x, blueprint.points[i].y);
             }
-        });
+            ctx.stroke();
+        }
+
+        blueprintActual = blueprint;
+
+        canvas.onclick = function(event) {
+            let rect = canvas.getBoundingClientRect();
+            let x = event.clientX - rect.left;
+            let y = event.clientY - rect.top;
+
+            blueprintActual.points.push({ x, y });
+
+            drawBlueprint(blueprintActual);
+        };
     }
 
     function init() {
-        initCanvasHandlers(); // Iniciar los manejadores de eventos del canvas
+        document.getElementById("saveButton").addEventListener("click", saveOrUpdateBlueprint);
+        document.getElementById("deleteButton").addEventListener("click", deleteBlueprint);
+        initCanvasHandlers();
+
         $("#getBlueprintsButton").click(function () {
             let author = $("#authorInput").val().trim();
             if (author) {
-                App.setAuthor(author);
-                App.updateBlueprintsList(author);
-                $("#authorName").text(author); // ✅ Actualiza el nombre del autor en la página
+                setAuthor(author);
+                updateBlueprintsList(author);
+                $("#authorName").text(author);
             } else {
-                alert("Please enter an author name.");
+                alert("Por favor ingresa un nombre de autor.");
             }
         });
+
+        fetchAllBlueprints();
     }
 
     return {
-        setAuthor: setAuthor,
-        updateBlueprintsList: updateBlueprintsList,
-        drawBlueprint: drawBlueprint,
-        init: init
+        setAuthor,
+        updateBlueprintsList,
+        drawBlueprint,
+        init
     };
 })();
 
-// Llamar a la inicialización después de que se cargue la ventana
 window.onload = App.init;

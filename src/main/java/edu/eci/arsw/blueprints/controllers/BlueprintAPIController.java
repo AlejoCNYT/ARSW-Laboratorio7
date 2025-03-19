@@ -11,87 +11,92 @@ import org.springframework.web.bind.annotation.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/**
- *
- * @author hcadavid
- */
 @RestController
 @RequestMapping("/blueprints")
-public class BlueprintAPIController
-{
+public class BlueprintAPIController {
 
     private final BlueprintsServices blueprintServices;
 
     @Autowired
-    public BlueprintAPIController(BlueprintsServices blueprintServices)
-    {
+    public BlueprintAPIController(BlueprintsServices blueprintServices) {
         this.blueprintServices = blueprintServices;
     }
 
     @GetMapping
-    public ResponseEntity<?> getBlueprints()
-    {
+    public ResponseEntity<?> getAllBlueprints() {
         try {
-            return new ResponseEntity<>(blueprintServices.getAllBlueprints(), HttpStatus.OK);
+            return ResponseEntity.ok(blueprintServices.getAllBlueprints());
         } catch (Exception e) {
-            return new ResponseEntity<>("Error al obtener los planos", HttpStatus.INTERNAL_SERVER_ERROR);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al obtener los planos");
         }
     }
 
     @GetMapping("/{author}")
-    public ResponseEntity<?> getBlueprintsByAuthor(@PathVariable("author") String author)
-    {
+    public ResponseEntity<?> getBlueprintsByAuthor(@PathVariable String author) {
         try {
             var blueprints = blueprintServices.getBlueprintsByAuthor(author);
-            if (blueprints.isEmpty()) {
-                return new ResponseEntity<>("No se encontraron planos para el autor: " + author, HttpStatus.NOT_FOUND);
-            }
-            return new ResponseEntity<>(blueprints, HttpStatus.OK);
+            return blueprints.isEmpty()
+                    ? ResponseEntity.status(HttpStatus.NOT_FOUND).body("No se encontraron planos para el autor: " + author)
+                    : ResponseEntity.ok(blueprints);
         } catch (Exception e) {
-            e.printStackTrace();
-            return new ResponseEntity<>("Error específico: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error específico: " + e.getMessage());
         }
     }
 
     @GetMapping("/{author}/{bpname}")
-    public ResponseEntity<?> getBlueprints(@PathVariable("author") String author, @PathVariable("bpname") String bpname)
-    {
+    public ResponseEntity<?> getBlueprintByAuthorAndName(@PathVariable String author, @PathVariable String bpname) {
         try {
-            var blueprints = blueprintServices.getBlueprint(author, bpname);
-            if (blueprints == null)
-            {
-                return new ResponseEntity<>("No se encontraron planos para el autor: " + author, HttpStatus.NOT_FOUND);
-            }
-            return new ResponseEntity<>(blueprints, HttpStatus.OK);
+            var blueprint = blueprintServices.getBlueprint(author, bpname);
+            return (blueprint != null)
+                    ? ResponseEntity.ok(blueprint)
+                    : ResponseEntity.status(HttpStatus.NOT_FOUND).body("Blueprint no encontrado");
         } catch (Exception e) {
-            e.printStackTrace(); // 🔥 Mostrará el error real en la consola
-            return new ResponseEntity<>("Error específico: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error específico: " + e.getMessage());
         }
     }
 
     @PostMapping
-    public ResponseEntity<?> createBlueprints(@RequestBody Blueprint blueprint)
-    {
+    public ResponseEntity<String> createBlueprint(@RequestBody Blueprint blueprint) {
         try {
             blueprintServices.addNewBlueprint(blueprint);
-            return new ResponseEntity<>("Plano agregado con éxito", HttpStatus.CREATED);
+            return ResponseEntity.status(HttpStatus.CREATED).body("Plano agregado con éxito");
         } catch (Exception e) {
-            return new ResponseEntity<>("Error al agregar los planos", HttpStatus.FORBIDDEN);
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Error al agregar el plano");
         }
     }
 
     @PutMapping("/{author}/{bpname}")
-    public ResponseEntity<?> actualizarBlueprint(@PathVariable("author") String author,
-                                                 @PathVariable("bpname") String bpname,
-                                                 @RequestBody Blueprint blueprintActualizado) {
+    public ResponseEntity<Void> updateBlueprint(@PathVariable String author,
+                                                @PathVariable String bpname,
+                                                @RequestBody Blueprint blueprintActualizado) {
         try {
             blueprintServices.updateBlueprint(author, bpname, blueprintActualizado);
-            return new ResponseEntity<>(HttpStatus.OK);
+            return ResponseEntity.ok().build();
         } catch (BlueprintNotFoundException e) {
-            return new ResponseEntity<>("Blueprint no encontrado", HttpStatus.NOT_FOUND);
+            return ResponseEntity.notFound().build();
         }
     }
 
+    @DeleteMapping("/{author}/{bpname}")
+    public ResponseEntity<Void> deleteBlueprint(@PathVariable String author, @PathVariable String bpname) {
+        try {
+            blueprintServices.deleteBlueprint(author, bpname);
+            return ResponseEntity.noContent().build();
+        } catch (BlueprintNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
 
+    /**
+     * Manejo global de excepciones específicas
+     */
+    @ExceptionHandler(BlueprintNotFoundException.class)
+    public ResponseEntity<String> handleBlueprintNotFoundException(BlueprintNotFoundException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<String> handleGeneralException(Exception e) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error inesperado: " + e.getMessage());
+    }
 }
-

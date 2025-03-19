@@ -81,19 +81,46 @@ function saveNewBlueprint() {
 
 // 🟢 Eliminar blueprint (DELETE + GET)
 function deleteBlueprint() {
-    if (!currentBlueprintName) return;
+    console.log("Intentando borrar blueprint:", currentBlueprintName); // Debugging
 
-    fetch(`/blueprints/${blueprintName}`, {
-        method: "DELETE"
+    if (!currentBlueprintName) {
+        alert("No blueprint selected to delete.");
+        return;
+    }
+
+    const confirmed = confirm(`Are you sure you want to delete the blueprint: ${currentBlueprintName}?`);
+    if (!confirmed) return;
+
+    fetch(`/blueprints/${currentBlueprintName}`, {
+        method: "DELETE",
+        headers: {
+            "Content-Type": "application/json"
+        }
     })
-        .then(response => response.json())
-        .then(data => {
-            updateBlueprintsList(data);
-            clearCanvas(); // Borrar el canvas después de eliminar
-            alert(`Blueprint "${blueprintName}" deleted successfully!`);
+        .then(response => {
+            console.log("Respuesta del servidor:", response);
+            if (!response.ok) {
+                return response.text().then(text => { throw new Error(text); });
+            }
+            alert(`Blueprint "${currentBlueprintName}" deleted successfully!`);
+
+            // 🟢 Limpiar el canvas y la lista de puntos
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            points = [];
+
+            // 🟢 Resetear variables y actualizar lista
+            currentBlueprintName = null;
+
+            // Verificar si currentAuthor está definido antes de llamar a updateBlueprintsList
+            if (typeof currentAuthor !== "undefined" && currentAuthor !== null) {
+                updateBlueprintsList(currentAuthor);
+            } else {
+                console.warn("currentAuthor no está definido, no se puede actualizar la lista.");
+            }
         })
         .catch(error => console.error("Error deleting blueprint:", error));
 }
+
 
 // 🟢 Limpiar el canvas completamente
 function clearCanvas() {

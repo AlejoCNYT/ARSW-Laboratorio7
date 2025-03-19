@@ -110,4 +110,6 @@ public class Blueprint
         this.points = points;
     }
 
+    public void remove(String bpname) { }
+
 }

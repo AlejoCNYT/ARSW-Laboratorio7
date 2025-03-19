@@ -23,8 +23,27 @@ var apiclient = (function () {
             });
     }
 
+    function updateBlueprint(author, blueprintName, points, callback) {
+        let blueprintData = { name: blueprintName, points: points };
+
+        $.ajax({
+            url: `${API_URL}/${author}/${blueprintName}`,
+            type: "PUT",
+            contentType: "application/json",
+            data: JSON.stringify(blueprintData)
+        })
+            .done(function (data) {
+                console.log("Blueprint updated successfully:", data);
+                callback(data);
+            })
+            .fail(function (error) {
+                console.error("Error updating blueprint:", error);
+            });
+    }
+
     return {
         getBlueprintsByAuthor: getBlueprintsByAuthor,
-        getBlueprintsByNameAndAuthor: getBlueprintsByNameAndAuthor
+        getBlueprintsByNameAndAuthor: getBlueprintsByNameAndAuthor,
+        updateBlueprint: updateBlueprint
     };
 })();

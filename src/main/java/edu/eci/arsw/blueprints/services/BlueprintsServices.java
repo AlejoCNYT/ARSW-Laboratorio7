@@ -35,11 +35,15 @@ public class BlueprintsServices
 
     public synchronized void updateBlueprint(String author, String bpname, Blueprint nuevoBlueprint) throws BlueprintNotFoundException {
         Blueprint blueprintExistente = bpp.getBlueprint(author, bpname);
+
         if (blueprintExistente == null) {
-            throw new BlueprintNotFoundException("El plano no existe");
+            throw new BlueprintNotFoundException("Blueprint not found for author: " + author + ", name: " + bpname);
         }
+
+        // ✅ Actualizar puntos del blueprint
         blueprintExistente.setPoints(nuevoBlueprint.getPoints());
     }
+
 
 
 
@@ -76,6 +80,14 @@ public class BlueprintsServices
         }
 
         return blueprints;
+    }
+
+    public synchronized void deleteBlueprint(String author, String bpname) throws BlueprintNotFoundException {
+        Blueprint blueprint = bpp.getBlueprint(author, bpname);
+        if (blueprint == null) {
+            throw new BlueprintNotFoundException("El plano con autor: " + author + " y nombre: " + bpname + " no existe.");
+        }
+        bpp.deleteBlueprint(author, bpname);
     }
 
 }

@@ -89,4 +89,15 @@ public class InMemoryBlueprintPersistence implements BlueprintsPersistence
         return new HashSet<>(blueprints.values());
     }
 
+    @Override
+    public synchronized void deleteBlueprint(String author, String bpname) throws BlueprintNotFoundException {
+        Tuple<String, String> key = new Tuple<>(author, bpname);
+
+        if (!blueprints.containsKey(key)) {
+            throw new BlueprintNotFoundException("Blueprint no encontrado.");
+        }
+
+        blueprints.remove(key);
+    }
+
 }
