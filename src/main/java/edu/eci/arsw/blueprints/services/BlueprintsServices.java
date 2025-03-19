@@ -1,11 +1,7 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package edu.eci.arsw.blueprints.services;
 
 import java.util.HashSet;
+import java.util.Set;
 
 import edu.eci.arsw.blueprints.filters.BlueprintFilter;
 import edu.eci.arsw.blueprints.model.Blueprint;
@@ -13,22 +9,18 @@ import edu.eci.arsw.blueprints.persistence.BlueprintNotFoundException;
 import edu.eci.arsw.blueprints.persistence.BlueprintPersistenceException;
 import edu.eci.arsw.blueprints.persistence.BlueprintsPersistence;
 
-import java.util.Set;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 @Service
-public class BlueprintsServices
-{
+public class BlueprintsServices {
     private final BlueprintsPersistence bpp;
-    private final BlueprintFilter filter;  // Estrategia de filtrado
+    private final BlueprintFilter filter;
 
     @Autowired
     public BlueprintsServices(@Qualifier("inMemoryBlueprintPersistence") BlueprintsPersistence bpp,
-                              @Qualifier("subsamplingFilter") BlueprintFilter filter)
-    {
+                              @Qualifier("subsamplingFilter") BlueprintFilter filter) {
         this.bpp = bpp;
         this.filter = filter;
     }
@@ -40,46 +32,31 @@ public class BlueprintsServices
             throw new BlueprintNotFoundException("Blueprint not found for author: " + author + ", name: " + bpname);
         }
 
-        // ✅ Actualizar puntos del blueprint
         blueprintExistente.setPoints(nuevoBlueprint.getPoints());
+
+        // ✅ Guardar cambios en la persistencia
+        bpp.updateBlueprint(author, bpname, blueprintExistente);
     }
 
-
-
-
-    public synchronized void addNewBlueprint(Blueprint bp) throws BlueprintPersistenceException
-    {
+    public synchronized void addNewBlueprint(Blueprint bp) throws BlueprintPersistenceException {
         bpp.saveBlueprint(bp);
     }
 
-    public Set<Blueprint> getAllBlueprints()
-    {
-        Set<Blueprint> blueprints = new HashSet<>(bpp.getAllBlueprints());
-        System.out.println("Blueprints obtenidos: " + blueprints);
-        return blueprints;
+    public Set<Blueprint> getAllBlueprints() {
+        return new HashSet<>(bpp.getAllBlueprints());
     }
 
-
-    public synchronized Blueprint getBlueprint(String author, String name) throws BlueprintNotFoundException
-    {
+    public synchronized Blueprint getBlueprint(String author, String name) throws BlueprintNotFoundException {
         Blueprint blueprint = bpp.getBlueprint(author, name);
-        if (blueprint == null)
-        {
+        if (blueprint == null) {
             throw new BlueprintNotFoundException("Blueprint not found for author: " + author + ", name: " + name);
         }
-        return filter.filter(blueprint);
+        return filter != null ? filter.filter(blueprint) : blueprint;
     }
 
-    public Set<Blueprint> getBlueprintsByAuthor(String author) throws BlueprintNotFoundException
-    {
+    public Set<Blueprint> getBlueprintsByAuthor(String author) throws BlueprintNotFoundException {
         Set<Blueprint> blueprints = bpp.getBlueprintsByAuthor(author);
-
-        if (blueprints.isEmpty())
-        {
-            throw new BlueprintNotFoundException("Blueprints not found for author: " + author);
-        }
-
-        return blueprints;
+        return blueprints != null ? blueprints : new HashSet<>();
     }
 
     public synchronized void deleteBlueprint(String author, String bpname) throws BlueprintNotFoundException {
@@ -90,4 +67,8 @@ public class BlueprintsServices
         bpp.deleteBlueprint(author, bpname);
     }
 
+    public synchronized void saveBlueprint(String author, Blueprint blueprint) throws BlueprintPersistenceException {
+        blueprint.setAuthor(author);
+        bpp.saveBlueprint(blueprint);
+    }
 }

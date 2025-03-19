@@ -137,6 +137,7 @@ var App = (function () {
 
         blueprintActual = blueprint;
 
+        // Permitir agregar nuevos puntos
         canvas.onclick = function(event) {
             let rect = canvas.getBoundingClientRect();
             let x = event.clientX - rect.left;
@@ -148,9 +149,43 @@ var App = (function () {
         };
     }
 
+    function createNewBlueprint() {
+        let canvas = document.getElementById("blueprintCanvas");
+        let ctx = canvas.getContext("2d");
+
+        // ✅ 1. Limpiar el canvas actual
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // ✅ 2. Pedir al usuario el nombre del nuevo plano
+        let blueprintName = prompt("Ingresa el nombre del nuevo blueprint:");
+        if (!blueprintName) {
+            alert("El nombre no puede estar vacío.");
+            return;
+        }
+
+        // ✅ 3. Crear el objeto del nuevo plano y permitir agregar puntos
+        blueprintActual = {
+            name: blueprintName,
+            points: []
+        };
+        currentBlueprintName = blueprintName;
+
+        alert(`Ahora puedes empezar a dibujar el plano: ${blueprintName}`);
+
+        canvas.onclick = function(event) {
+            let rect = canvas.getBoundingClientRect();
+            let x = event.clientX - rect.left;
+            let y = event.clientY - rect.top;
+
+            blueprintActual.points.push({ x, y });
+            drawBlueprint(blueprintActual);
+        };
+    }
+
     function init() {
         document.getElementById("saveButton").addEventListener("click", saveOrUpdateBlueprint);
         document.getElementById("deleteButton").addEventListener("click", deleteBlueprint);
+        document.getElementById("createBlueprintButton").addEventListener("click", createNewBlueprint); // ✅ Vincular botón de nuevo plano
         initCanvasHandlers();
 
         $("#getBlueprintsButton").click(function () {

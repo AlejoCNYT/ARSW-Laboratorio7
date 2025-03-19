@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package edu.eci.arsw.blueprints.persistence.impl;
 
 import edu.eci.arsw.blueprints.model.Blueprint;
@@ -18,60 +13,50 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- *
- * @author hcadavid
+ * Implementación en memoria de la persistencia de Blueprints.
+ * Simula una base de datos almacenando Blueprints en un mapa concurrente.
  */
 @Repository
-public class InMemoryBlueprintPersistence implements BlueprintsPersistence
-{
+public class InMemoryBlueprintPersistence implements BlueprintsPersistence {
 
-    public static final Map<Tuple<String,String>, Blueprint> blueprints = new ConcurrentHashMap<>();
+    private static final Map<Tuple<String, String>, Blueprint> blueprints = new ConcurrentHashMap<>();
 
-    public InMemoryBlueprintPersistence()
-    {
-        //load stub data
-        Point[] pts1=new Point[]{new Point(140, 160),new Point(155, 125)};
-        Point[] pts2=new Point[]{new Point(150, 120),new Point(135, 95)};
-        Point[] pts3=new Point[]{new Point(180, 100),new Point(175, 140)};
-        Blueprint bp1=new Blueprint("LeCorbusier", "Villa Savoye",pts1);
-        Blueprint bp2=new Blueprint("LeCorbusier", "Unidad de Habitación de Marsella",pts2);
-        Blueprint bp3=new Blueprint("Antoni Gaudí", "la Sagrada Familia",pts3);
-        blueprints.put(new Tuple<>(bp1.getAuthor(),bp1.getName()), bp1);
-        blueprints.put(new Tuple<>(bp2.getAuthor(),bp2.getName()), bp2);
-        blueprints.put(new Tuple<>(bp3.getAuthor(),bp3.getName()), bp3);
-        /*try {
-            saveBlueprint(new Blueprint("Frank Lloyd Wright", "Fallingwater", pts1));
-            System.out.println(getBlueprint("Frank Lloyd Wright", "Fallingwater"));
-        } catch (BlueprintPersistenceException | BlueprintNotFoundException e) {
-            e.printStackTrace();
-        }*/
+    public InMemoryBlueprintPersistence() {
+        // Datos de prueba
+        Point[] pts1 = new Point[]{new Point(140, 160), new Point(155, 125)};
+        Point[] pts2 = new Point[]{new Point(150, 120), new Point(135, 95)};
+        Point[] pts3 = new Point[]{new Point(180, 100), new Point(175, 140)};
+
+        Blueprint bp1 = new Blueprint("LeCorbusier", "Villa Savoye", pts1);
+        Blueprint bp2 = new Blueprint("LeCorbusier", "Unidad de Habitación de Marsella", pts2);
+        Blueprint bp3 = new Blueprint("Antoni Gaudí", "La Sagrada Familia", pts3);
+
+        blueprints.put(new Tuple<>(bp1.getAuthor(), bp1.getName()), bp1);
+        blueprints.put(new Tuple<>(bp2.getAuthor(), bp2.getName()), bp2);
+        blueprints.put(new Tuple<>(bp3.getAuthor(), bp3.getName()), bp3);
     }
 
     @Override
-    public void saveBlueprint(Blueprint bp) throws BlueprintPersistenceException
-    {
+    public void saveBlueprint(Blueprint bp) throws BlueprintPersistenceException {
         if (blueprints.putIfAbsent(new Tuple<>(bp.getAuthor(), bp.getName()), bp) != null) {
-            throw new BlueprintPersistenceException("The given blueprint already exists: " + bp);
+            throw new BlueprintPersistenceException("El blueprint ya existe: " + bp);
         }
-
     }
 
     @Override
     public Blueprint getBlueprint(String author, String name) throws BlueprintNotFoundException {
         Tuple<String, String> key = new Tuple<>(author, name);
+        Blueprint bp = blueprints.get(key);
 
-        if (!blueprints.containsKey(key)) {
-            throw new BlueprintNotFoundException("Blueprint not found for author: " + author + ", name: " + name);
+        if (bp == null) {
+            throw new BlueprintNotFoundException("Blueprint no encontrado: Autor=" + author + ", Nombre=" + name);
         }
 
-        return blueprints.get(key);
+        return bp;
     }
 
-
-
-
     @Override
-    public Set<Blueprint> getBlueprintsByAuthor(String author) {
+    public Set<Blueprint> getBlueprintsByAuthor(String author) throws BlueprintNotFoundException {
         Set<Blueprint> result = new HashSet<>();
 
         for (Map.Entry<Tuple<String, String>, Blueprint> entry : blueprints.entrySet()) {
@@ -80,24 +65,35 @@ public class InMemoryBlueprintPersistence implements BlueprintsPersistence
             }
         }
 
+        if (result.isEmpty()) {
+            throw new BlueprintNotFoundException("No se encontraron blueprints para el autor: " + author);
+        }
+
         return result;
     }
 
     @Override
-    public Set<Blueprint> getAllBlueprints()
-    {
+    public Set<Blueprint> getAllBlueprints() {
         return new HashSet<>(blueprints.values());
     }
 
     @Override
-    public synchronized void deleteBlueprint(String author, String bpname) throws BlueprintNotFoundException {
+    public void deleteBlueprint(String author, String bpname) throws BlueprintNotFoundException {
+        Tuple<String, String> key = new Tuple<>(author, bpname);
+
+        if (blueprints.remove(key) == null) {
+            throw new BlueprintNotFoundException("Blueprint no encontrado: Autor=" + author + ", Nombre=" + bpname);
+        }
+    }
+
+    @Override
+    public void updateBlueprint(String author, String bpname, Blueprint blueprintExistente) throws BlueprintNotFoundException {
         Tuple<String, String> key = new Tuple<>(author, bpname);
 
         if (!blueprints.containsKey(key)) {
-            throw new BlueprintNotFoundException("Blueprint no encontrado.");
+            throw new BlueprintNotFoundException("No se puede actualizar. Blueprint no encontrado: Autor=" + author + ", Nombre=" + bpname);
         }
 
-        blueprints.remove(key);
+        blueprints.put(key, blueprintExistente);
     }
-
 }
