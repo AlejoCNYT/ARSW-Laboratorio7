@@ -24,6 +24,9 @@
 	2. Se haga GET al recurso /blueprints, para obtener de nuevo todos los planos realizados.
 	3. Se calculen nuevamente los puntos totales del usuario.
 
+	![imagen](https://github.com/user-attachments/assets/1733abc9-d500-4590-88ce-8281cec68ba5)
+
+
 	Para lo anterior tenga en cuenta:
 
 	* jQuery no tiene funciones para peticiones PUT o DELETE, por lo que es necesario 'configurarlas' manualmente a través de su API para AJAX. Por ejemplo, para hacer una peticion PUT a un recurso /myrecurso:
